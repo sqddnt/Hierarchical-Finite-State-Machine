@@ -40,13 +40,15 @@ namespace HFSM {
         /// "Any" and <see cref="Transition.OriginStateObject"/>'s <see cref="StateMachine"/> is active.
         /// </summary>
         public void ListenEvent() {
+            if (!(OriginStateObject.IsActive ||
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                return;
+
+            eventListened = true;
+
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-
-            }else if (OriginStateObject.IsActive ||
-               (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)) {
-
-                eventListened = true;
+                ConsumeEvent(); // prevent re-processing next Update
             }
         }
 
@@ -90,14 +92,16 @@ namespace HFSM {
 
         /// <inheritdoc cref="EventTransition.ListenEvent"/>
         public void ListenEvent(T arg) {
+            if (!(OriginStateObject.IsActive ||
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                return;
+
+            eventListened = true;
+            args.Add(arg);
+
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-
-            }else if (OriginStateObject.IsActive ||
-               (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)) {
-
-                eventListened = true;
-                args.Add(arg);
+                ConsumeEvent(); // clears args + resets eventListened
             }
         }
 
@@ -153,14 +157,16 @@ namespace HFSM {
 
         /// <inheritdoc cref="EventTransition.ListenEvent"/>
         public void ListenEvent(T1 arg1, T2 arg2) {
+            if (!(OriginStateObject.IsActive ||
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                return;
+
+            eventListened = true;
+            args.Add((arg1, arg2));
+
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-
-            }else if (OriginStateObject.IsActive ||
-               (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)) {
-
-                eventListened = true;
-                this.args.Add((arg1, arg2));
+                ConsumeEvent();
             }
         }
 
@@ -216,15 +222,16 @@ namespace HFSM {
 
         /// <inheritdoc cref="EventTransition.ListenEvent"/>
         public void ListenEvent(T1 arg1, T2 arg2, T3 arg3) {
+            if (!(OriginStateObject.IsActive ||
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                return;
+
+            eventListened = true;
+            args.Add((arg1, arg2, arg3));
+
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-
-            } else if (OriginStateObject.IsActive ||
-               (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)) {
-
-                eventListened = true;
-                args.Add( (arg1, arg2, arg3) );
-                
+                ConsumeEvent();
             }
         }
 

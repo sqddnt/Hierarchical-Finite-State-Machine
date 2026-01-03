@@ -415,12 +415,9 @@ namespace HFSM {
             if (availableTransition == null) {
                 availableTransition = CurrentStateObject.GetAvailableTransition();
             }
-
-            foreach (EventTransitionBase anyEventTransition in anyEventTransitions) {
-                anyEventTransition.ConsumeEvent();
-            }
-            ConsumeTransitionsEvents();
             
+            ConsumeTransitionsEvents();
+
             if (availableTransition != null) {
                 ChangeState(availableTransition);
                 changedState = true;
@@ -526,9 +523,9 @@ namespace HFSM {
         /// </param>
         internal void ProcessInstantEvent(EventTransitionBase eventTransition) {
             StateObject originStateObject = eventTransition.OriginStateObject;
-            if (originStateObject.IsActive ||
-                (originStateObject.GetType() == typeof(State.Any) && originStateObject.StateMachine.IsActive) &&
-                eventTransition.AllConditionsMet()) {
+            if ((originStateObject.IsActive ||
+                 (originStateObject.GetType() == typeof(State.Any) && originStateObject.StateMachine.IsActive))
+                && eventTransition.AllConditionsMet()) {
 
                 ChangeState(eventTransition);
             }
