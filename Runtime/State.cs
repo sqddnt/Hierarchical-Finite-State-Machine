@@ -91,6 +91,8 @@ namespace HFSM {
         /// This function is called the last update cycle before this <see cref="State"/> becomes inactive.
         /// </summary>
         internal sealed override void Exit() {
+            ConsumeTransitionsEvents();
+            
             IsActive = false;
             OnExit();
         }

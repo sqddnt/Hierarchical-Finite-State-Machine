@@ -48,7 +48,6 @@ namespace HFSM {
 
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-                ConsumeEvent(); // prevent re-processing next Update
             }
         }
 
@@ -101,7 +100,6 @@ namespace HFSM {
 
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-                ConsumeEvent(); // clears args + resets eventListened
             }
         }
 
@@ -166,7 +164,6 @@ namespace HFSM {
 
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-                ConsumeEvent();
             }
         }
 
@@ -231,7 +228,6 @@ namespace HFSM {
 
             if (processInstantly) {
                 OriginStateObject.StateMachine.ProcessInstantEvent(this);
-                ConsumeEvent();
             }
         }
 

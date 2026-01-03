@@ -415,12 +415,13 @@ namespace HFSM {
             if (availableTransition == null) {
                 availableTransition = CurrentStateObject.GetAvailableTransition();
             }
-            
-            ConsumeTransitionsEvents();
 
             if (availableTransition != null) {
                 ChangeState(availableTransition);
                 changedState = true;
+                
+                if (availableTransition is EventTransitionBase ev)
+                    ev.ConsumeEvent();
             }
             //CurrentStateObject.ConsumeTransitionsEvents();
             //previousStateObject.ConsumeTransitionsEvents(); 
@@ -528,6 +529,8 @@ namespace HFSM {
                 && eventTransition.AllConditionsMet()) {
 
                 ChangeState(eventTransition);
+                
+                eventTransition.ConsumeEvent();
             }
         }
 
@@ -601,6 +604,9 @@ namespace HFSM {
         /// The hierarchical execution of <see cref="Exit"/> is performed in a bottom-up fashion.
         /// </summary>
         internal sealed override void Exit() {
+            if (CurrentStateObject != null)
+                ConsumeTransitionsEvents();
+            
             CurrentStateObject.Exit();
             OnExit();
             IsActive = false;
