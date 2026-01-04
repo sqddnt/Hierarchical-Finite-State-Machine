@@ -41,7 +41,8 @@ namespace HFSM {
         private State anyState;
         private bool changedState;
         private bool _isUpdating;
-        private EventTransitionBase _pendingInstantEvent;
+        private Queue<EventTransitionBase> _pendingInstantEvents;
+        private HashSet<EventTransitionBase> _pendingInstantSet;
 
         /// <summary>
         /// Class constructor. Creates a <see cref="StateMachine"/> and initializes it. Throws
@@ -67,6 +68,11 @@ namespace HFSM {
             anyState.StateMachine = this;
             initialized = false;
             changedState = false;
+
+            _isUpdating = false;
+
+            _pendingInstantEvents = new Queue<EventTransitionBase>();
+            _pendingInstantSet = new HashSet<EventTransitionBase>();
 
             DefaultStateObject = stateObjects[0];
             foreach (StateObject stateObject in stateObjects) {
@@ -394,6 +400,18 @@ namespace HFSM {
         }
         #endregion
 
+        private void FlushPendingInstantEvents() {
+            if (_pendingInstantEvents.Count == 0) {
+                return;
+            }
+
+            while (_pendingInstantEvents.Count > 0) {
+                EventTransitionBase e = _pendingInstantEvents.Dequeue();
+                _pendingInstantSet.Remove(e);
+                ProcessInstantEvent(e);
+            }
+        }
+
         /// <summary>
         /// Tries to find an available <see cref="Transition"/> and then use it to change to a new
         /// <see cref="StateObject"/>.
@@ -525,8 +543,8 @@ namespace HFSM {
         /// </param>
         internal void ProcessInstantEvent(EventTransitionBase eventTransition) {
             if (_isUpdating) {
-                if (_pendingInstantEvent == null) {
-                    _pendingInstantEvent = eventTransition;
+                if (_pendingInstantSet.Add(eventTransition)) {
+                    _pendingInstantEvents.Enqueue(eventTransition);
                 }
                 return;
             }
@@ -537,9 +555,8 @@ namespace HFSM {
                 && eventTransition.AllConditionsMet()) {
 
                 ChangeState(eventTransition);
-                changedState = true;
-                
                 eventTransition.ConsumeEvent();
+                changedState = true;
             }
         }
 
@@ -550,21 +567,25 @@ namespace HFSM {
         /// </summary>
         public sealed override void Update() {
             CheckInitialization();
+
             _isUpdating = true;
 
             changedState = TryChangeState();
             if (!changedState) {
                 OnUpdate();
-                CurrentStateObject.UpdateInternal();
+
+                // Allow events fired during OnUpdate() to preempt child update
+                _isUpdating = false;
+                FlushPendingInstantEvents();
+                _isUpdating = true;
+
+                if (!changedState && _pendingInstantEvents.Count == 0) {
+                    CurrentStateObject.UpdateInternal();
+                }
             }
 
             _isUpdating = false;
-
-            if (_pendingInstantEvent != null) {
-                var e = _pendingInstantEvent;
-                _pendingInstantEvent = null;
-                ProcessInstantEvent(e);
-            }
+            FlushPendingInstantEvents();
         }
 
         /// <summary>
@@ -572,18 +593,8 @@ namespace HFSM {
         /// hiearchical finite state machine pattern.
         /// </summary>
         internal sealed override void UpdateInternal() {
-            _isUpdating = true;
-
             OnUpdate();
             CurrentStateObject.UpdateInternal();
-
-            _isUpdating = false;
-
-            if (_pendingInstantEvent != null) {
-                var e = _pendingInstantEvent;
-                _pendingInstantEvent = null;
-                ProcessInstantEvent(e);
-            }
         }
 
         /// <summary>
@@ -593,8 +604,14 @@ namespace HFSM {
         /// </summary>
         public sealed override void FixedUpdate() {
             CheckInitialization();
+
+            _isUpdating = true;
+
             OnFixedUpdate();
             CurrentStateObject.FixedUpdate();
+
+            _isUpdating = false;
+            FlushPendingInstantEvents();
         }
 
         /// <summary>
@@ -604,10 +621,16 @@ namespace HFSM {
         /// </summary>
         public sealed override void LateUpdate() {
             CheckInitialization();
+
+            _isUpdating = true;
+
             if (!changedState) {
                 OnLateUpdate();
                 CurrentStateObject.LateUpdate();
             }
+
+            _isUpdating = false;
+            FlushPendingInstantEvents();
         }
 
         /// <summary>
