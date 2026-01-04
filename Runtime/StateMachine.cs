@@ -41,6 +41,10 @@ namespace HFSM {
         private State anyState;
         private bool changedState;
 
+        // MINIMAL RE-ENTRANCY GUARD FOR processInstantly=true
+        private bool _isUpdating;
+        private EventTransitionBase _pendingInstantEvent;
+
         /// <summary>
         /// Class constructor. Creates a <see cref="StateMachine"/> and initializes it. Throws
         /// <see cref="StatelessStateMachineException"/> if no <see cref="StateObject"/> is passed as argument.
@@ -522,12 +526,20 @@ namespace HFSM {
         /// The transtion to be performed.
         /// </param>
         internal void ProcessInstantEvent(EventTransitionBase eventTransition) {
+            if (_isUpdating) {
+                if (_pendingInstantEvent == null) {
+                    _pendingInstantEvent = eventTransition;
+                }
+                return;
+            }
+
             StateObject originStateObject = eventTransition.OriginStateObject;
             if ((originStateObject.IsActive ||
                  (originStateObject.GetType() == typeof(State.Any) && originStateObject.StateMachine.IsActive))
                 && eventTransition.AllConditionsMet()) {
 
                 ChangeState(eventTransition);
+                changedState = true;
                 
                 eventTransition.ConsumeEvent();
             }
@@ -540,10 +552,20 @@ namespace HFSM {
         /// </summary>
         public sealed override void Update() {
             CheckInitialization();
+            _isUpdating = true;
+
             changedState = TryChangeState();
             if (!changedState) {
                 OnUpdate();
                 CurrentStateObject.UpdateInternal();
+            }
+
+            _isUpdating = false;
+
+            if (_pendingInstantEvent != null) {
+                var e = _pendingInstantEvent;
+                _pendingInstantEvent = null;
+                ProcessInstantEvent(e);
             }
         }
 
@@ -552,8 +574,18 @@ namespace HFSM {
         /// hiearchical finite state machine pattern.
         /// </summary>
         internal sealed override void UpdateInternal() {
+            _isUpdating = true;
+
             OnUpdate();
             CurrentStateObject.UpdateInternal();
+
+            _isUpdating = false;
+
+            if (_pendingInstantEvent != null) {
+                var e = _pendingInstantEvent;
+                _pendingInstantEvent = null;
+                ProcessInstantEvent(e);
+            }
         }
 
         /// <summary>
