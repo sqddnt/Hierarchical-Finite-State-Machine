@@ -2351,4 +2351,115 @@ public class HFSMTest {
 
         Assert.AreEqual(expected, sb.ToString());
     }
+    [Test]
+    public void InstantEventTransitionOnInactiveSourceState()
+    {
+        State stateA = new StateA();
+        State stateB = new StateB();
+        State stateC = new StateC();
+        StateMachine zeroStateMachine = new StateMachineZero(stateA, stateB, stateC);
+        zeroStateMachine.DefaultStateObject = stateA;
+
+        Action transitionEventBC = null;
+        bool conditionBC = false;
+        transitionEventBC += stateB.AddEventTransition(stateC, true, () => { return conditionBC; });
+
+        Action transitionEventAC = null;
+        bool conditionAC = false;
+        transitionEventAC += stateA.AddEventTransition(stateC, true, () => { return conditionAC; });
+
+        zeroStateMachine.Init();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        transitionEventBC.Invoke();
+        transitionEventAC.Invoke();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        conditionBC = true;
+        transitionEventBC.Invoke();
+        transitionEventAC.Invoke();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        conditionAC = true;
+        transitionEventBC.Invoke();
+        transitionEventAC.Invoke();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateC.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+    }
+
+    [Test]
+    public void InstantEventTransitionsEventIsConsumed()
+    {
+        State stateA = new StateA();
+        State stateB = new StateB();
+        StateMachine zeroStateMachine = new StateMachineZero(stateA, stateB);
+        zeroStateMachine.DefaultStateObject = stateA;
+
+        Action transitionEventAB = null;
+        bool conditionAB = false;
+        transitionEventAB += stateA.AddEventTransition(stateB, true, () => { return conditionAB; });
+
+        Action transitionEventBA = null;
+        bool conditionBA = false;
+        transitionEventBA += stateB.AddEventTransition(stateA, true, () => { return conditionBA; });
+
+        zeroStateMachine.Init();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        conditionAB = true;
+        transitionEventAB.Invoke();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateB.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        conditionBA = true;
+        transitionEventBA.Invoke();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        zeroStateMachine.Update();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+    }
+
+    [Test]
+    public void PastEventTransitionsEventAreConsumed()
+    {
+        State stateA = new StateA();
+        State stateB = new StateB();
+        State stateC = new StateC();
+        StateMachine zeroStateMachine = new StateMachineZero(stateA, stateB, stateC);
+        zeroStateMachine.DefaultStateObject = stateA;
+
+        Action transitionEventAB = null;
+        bool conditionAB = false;
+        transitionEventAB += stateA.AddEventTransition(stateB, () => { return conditionAB; });
+
+        Action transitionEventBC = null;
+        bool conditionBC = false;
+        transitionEventBC += stateB.AddEventTransition(stateC, () => { return conditionBC; });
+
+        zeroStateMachine.Init();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        conditionBC = true;
+        transitionEventBC.Invoke();
+        zeroStateMachine.Update();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateA.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        conditionAB = true;
+        transitionEventAB.Invoke();
+        zeroStateMachine.Update();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateB.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+
+        zeroStateMachine.Update();
+        Assert.AreEqual(zeroStateMachine.GetType() + "." + stateB.GetType(),
+                        zeroStateMachine.GetCurrentStateName());
+    }
 }

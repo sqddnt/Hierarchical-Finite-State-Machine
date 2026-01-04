@@ -41,8 +41,9 @@ namespace HFSM {
         /// </summary>
         public void ListenEvent() {
             if (!(OriginStateObject.IsActive ||
-                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive))) {
                 return;
+            }
 
             eventListened = true;
 
@@ -156,8 +157,9 @@ namespace HFSM {
         /// <inheritdoc cref="EventTransition.ListenEvent"/>
         public void ListenEvent(T1 arg1, T2 arg2) {
             if (!(OriginStateObject.IsActive ||
-                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive))) {
                 return;
+            }
 
             eventListened = true;
             args.Add((arg1, arg2));
@@ -220,8 +222,9 @@ namespace HFSM {
         /// <inheritdoc cref="EventTransition.ListenEvent"/>
         public void ListenEvent(T1 arg1, T2 arg2, T3 arg3) {
             if (!(OriginStateObject.IsActive ||
-                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive)))
+                  (OriginStateObject.GetType() == typeof(State.Any) && OriginStateObject.StateMachine.IsActive))) { 
                 return;
+            }
 
             eventListened = true;
             args.Add((arg1, arg2, arg3));
