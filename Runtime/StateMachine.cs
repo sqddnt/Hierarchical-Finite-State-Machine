@@ -40,8 +40,6 @@ namespace HFSM {
         private bool initialized;
         private State anyState;
         private bool changedState;
-
-        // MINIMAL RE-ENTRANCY GUARD FOR processInstantly=true
         private bool _isUpdating;
         private EventTransitionBase _pendingInstantEvent;
 
